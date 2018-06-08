@@ -9,11 +9,13 @@ import (
 	"taizhou-line-crawer/model"
 	"io/ioutil"
 	"github.com/json-iterator/go"
+	"strconv"
 )
 var jsonf = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func main() {
 	CrawLine()
+	//StartGetLineSegRelation()
 	/*http.HandleFunc("/taizhou/start",CrawLine)
 	err := http.ListenAndServe(":1067", nil)
 	if err != nil {
@@ -22,6 +24,8 @@ func main() {
 	fmt.Println("start server at 0.0.0.0:1067")*/
     //test
 }
+
+
 
 func CrawLine () {
 	fmt.Println("抓取开始")
@@ -44,16 +48,38 @@ func CrawLine () {
 		// handle error
 	}
 
-	fmt.Println(string(body))
+	//fmt.Println(string(body))
 	var data model.RouteData
 	//
 	jsonf.Unmarshal(body, &data)
-	fmt.Println("data is",data)
+	//fmt.Println("data is",data)
+
+	fmt.Println("insert into `lines`(line_id,line_name) values(?,?)",data.RouteList[0].RouteID,data.RouteList[0].RouteName)
 
 	for i:=0;i<len(data.RouteList) ;i++  {
-       db.Exec("insert into lines(line_id,line_name) values(?,?)",data.RouteList[i].RouteID,data.RouteList[i].RouteName)
+       //db.Exec("insert into `lines`(line_id,line_name) values(?,?)",data.RouteList[i].RouteID,data.RouteList[i].RouteName)
+       GetSeg(data.RouteList[i].RouteID,0)
+       GetSeg(data.RouteList[i].RouteID,1)
 	}
 	fmt.Println("抓取完成!")
 
+
+}
+
+func GetSeg (line_id int64,updown int64) {
+	id := strconv.FormatInt(line_id,10)
+	up := strconv.FormatInt(updown,10)
+	resp, err := http.Get("http://0523.bitekun.xin/getStation?line_id="+id+"&updown="+up)
+	if err != nil {
+		// handle error
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		// handle error
+		fmt.Println("error")
+	}
+	fmt.Println(body)
 
 }
